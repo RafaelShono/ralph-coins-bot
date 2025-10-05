@@ -550,11 +550,21 @@ async function main() {
         break;
         
       default:
-        logger.info('Comandos disponíveis para Ralph Coins Bot:');
-        logger.info('  start       - Iniciar bot com agendamento automático (9 posts/dia)');
-        logger.info('  post-now    - Postar um tweet Ralph Coins agora');
-        logger.info('  post-batch  - Postar lote de tweets Ralph Coins');
-        logger.info('  status      - Verificar status do Ralph Coins Bot');
+        // Se não especificar comando, iniciar automaticamente (para Render)
+        logger.info('🚀 Iniciando Ralph Coins Bot automaticamente...');
+        await bot.startScheduler();
+        logger.info('🔄 Bot rodando continuamente... Pressione Ctrl+C para parar.');
+        
+        // Manter o processo rodando
+        process.on('SIGINT', () => {
+          logger.info('🛑 Parando Ralph Coins Bot...');
+          process.exit(0);
+        });
+        
+        // Manter vivo
+        setInterval(() => {
+          // Heartbeat a cada 5 minutos
+        }, 5 * 60 * 1000);
         break;
     }
   } catch (error) {
