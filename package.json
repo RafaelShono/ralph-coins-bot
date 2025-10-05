@@ -1,0 +1,29 @@
+{
+  "name": "ralph-coins-bot",
+  "version": "1.0.0",
+  "description": "Bot de Twitter automatizado para conteúdo de crypto com API oficial",
+  "main": "src/indexRalphCoins.js",
+  "scripts": {
+    "start": "node src/indexRalphCoins.js start",
+    "ralph-coins-start": "node src/indexRalphCoins.js start",
+    "ralph-coins-now": "node src/indexRalphCoins.js post-now",
+    "ralph-coins-batch": "node src/indexRalphCoins.js post-batch",
+    "ralph-coins-status": "node src/indexRalphCoins.js status",
+    "test": "jest"
+  },
+  "keywords": ["twitter", "bot", "crypto", "api", "llm"],
+  "author": "Ralph Coins",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "node-cron": "^3.0.3",
+    "dotenv": "^16.3.1",
+    "winston": "^3.11.0",
+    "cheerio": "^1.0.0-rc.12",
+    "openai": "^4.20.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  }
+}
