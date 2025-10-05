@@ -561,9 +561,32 @@ async function main() {
           process.exit(0);
         });
         
-        // Manter vivo
+        // Manter vivo e abrir porta para o Render
+        const express = require('express');
+        const app = express();
+        const PORT = process.env.PORT || 3000;
+        
+        app.get('/', (req, res) => {
+          res.json({
+            status: 'Ralph Coins Bot ativo',
+            message: 'Bot rodando e postando automaticamente',
+            nextPosts: '8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h',
+            timestamp: new Date().toISOString()
+          });
+        });
+        
+        app.get('/health', (req, res) => {
+          res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+        });
+        
+        app.listen(PORT, () => {
+          logger.info(`🌐 Bot rodando na porta ${PORT}`);
+          logger.info(`🔗 Health check: http://localhost:${PORT}/health`);
+        });
+        
+        // Heartbeat a cada 5 minutos
         setInterval(() => {
-          // Heartbeat a cada 5 minutos
+          logger.info('💓 Bot ativo - próximo post agendado');
         }, 5 * 60 * 1000);
         break;
     }
