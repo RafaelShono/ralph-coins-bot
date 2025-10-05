@@ -492,13 +492,18 @@ Ralph Coins na vanguarda!
           } catch (error) {
             logger.error(`❌ Erro no post agendado ${index + 1}:`, error.message);
           }
+        }, {
+          scheduled: true,
+          timezone: "America/Sao_Paulo"
         });
         
-        logger.info(`✅ Post ${index + 1} agendado: ${schedule}`);
+        logger.info(`✅ Post ${index + 1} agendado: ${schedule} (Brasil)`);
       });
       
       logger.info('✅ Agendador Ralph Coins iniciado com sucesso!');
-      logger.info('📅 Posts agendados: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h');
+      logger.info('📅 Posts agendados: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h (Brasil)');
+      logger.info('🕐 Hora atual do servidor:', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
+      logger.info('🌍 Timezone configurado: America/Sao_Paulo');
       
     } catch (error) {
       logger.error('❌ Erro ao iniciar agendador:', error.message);
