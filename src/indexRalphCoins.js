@@ -894,6 +894,7 @@ async function main() {
       default:
         // Se não especificar comando, iniciar automaticamente (para Render)
         logger.info('🚀 Iniciando Ralph Coins Bot automaticamente...');
+        await bot.initialize();
         await bot.startScheduler();
         logger.info('🔄 Bot rodando continuamente... Pressione Ctrl+C para parar.');
         
@@ -936,7 +937,8 @@ async function main() {
         
         // Heartbeat a cada 5 minutos
         setInterval(() => {
-          logger.info('💓 Bot ativo - próximo post agendado');
+          const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+          logger.info(`💓 Bot ativo - ${now} - próximo post agendado`);
         }, 5 * 60 * 1000);
         break;
     }
