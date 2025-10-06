@@ -9,6 +9,12 @@
     "ralph-coins-now": "node src/indexRalphCoins.js post-now",
     "ralph-coins-batch": "node src/indexRalphCoins.js post-batch",
     "ralph-coins-status": "node src/indexRalphCoins.js status",
+    "ralph-coins-engage": "node src/indexRalphCoins.js engage",
+    "ralph-coins-trends": "node src/indexRalphCoins.js trends",
+    "ralph-coins-influencers": "node src/indexRalphCoins.js influencers",
+    "ralph-coins-stats": "node src/indexRalphCoins.js engagement-stats",
+    "ralph-coins-test": "node src/indexRalphCoins.js test-engagement",
+    "ralph-coins-reply": "node src/indexRalphCoins.js reply-to",
     "test": "jest"
   },
   "keywords": ["twitter", "bot", "crypto", "api", "llm"],

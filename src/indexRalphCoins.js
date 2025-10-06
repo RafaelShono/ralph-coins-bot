@@ -1,6 +1,7 @@
 const TwitterOAuthOfficial = require('./services/twitterOAuthOfficial');
 const BraveSearch = require('./services/braveSearch');
 const LLMService = require('./services/llmService');
+const EngagementService = require('./services/engagementService');
 const logger = require('./utils/logger');
 const config = require('./config/config');
 
@@ -9,6 +10,7 @@ class RalphCoinsBot {
     this.twitterService = new TwitterOAuthOfficial();
     this.braveSearch = new BraveSearch();
     this.llmService = new LLMService();
+    this.engagementService = new EngagementService();
   }
 
   async initialize() {
@@ -458,6 +460,257 @@ Ralph Coins na vanguarda!
     return defaultTweets[Math.floor(Math.random() * defaultTweets.length)];
   }
 
+  async engageWithCryptoCommunity() {
+    try {
+      logger.info('=== INICIANDO ENGAJAMENTO COM COMUNIDADE CRYPTO ===');
+      
+      const results = await this.engagementService.engageWithPosts(5);
+      
+      const successCount = results.filter(r => r.success).length;
+      logger.info(`✅ Engajamento concluído: ${successCount}/5 respostas postadas`);
+      
+      // Log detalhado dos resultados
+      results.forEach((result, index) => {
+        if (result.success) {
+          logger.info(`Resposta ${index + 1}: ${result.replyText.substring(0, 50)}...`);
+          logger.info(`  - Tweet original: ${result.originalTweetId}`);
+          logger.info(`  - Resposta: ${result.replyId}`);
+          logger.info(`  - Influencer: ${result.influencer}`);
+        } else {
+          logger.error(`Falha ${index + 1}: ${result.error}`);
+        }
+      });
+      
+      return results;
+      
+    } catch (error) {
+      logger.error('❌ Erro no engajamento com comunidade:', error.message);
+      throw error;
+    }
+  }
+
+  async findAndReplyToTrends() {
+    try {
+      logger.info('=== PROCURANDO TRENDS DE CRYPTO ===');
+      
+      const trendingTopics = await this.engagementService.getTrendingCryptoTopics();
+      
+      if (trendingTopics.length === 0) {
+        logger.info('Nenhum trend encontrado');
+        return [];
+      }
+      
+      logger.info(`Encontrados ${trendingTopics.length} trends:`);
+      trendingTopics.forEach((topic, index) => {
+        logger.info(`${index + 1}. ${topic.hashtag} - ${topic.posts} posts`);
+      });
+      
+      // Escolher o trend mais popular para engajar
+      const topTrend = trendingTopics[0];
+      logger.info(`Engajando com o trend: ${topTrend.hashtag}`);
+      
+      const posts = await this.engagementService.searchCryptoPosts(topTrend.hashtag, 3);
+      const results = [];
+      
+      for (const post of posts.slice(0, 2)) { // Responder apenas 2 posts do trend
+        try {
+          const replyText = await this.engagementService.generateReply(post);
+          const result = await this.engagementService.replyToTweet(post.id, replyText);
+          
+          results.push({
+            success: true,
+            trend: topTrend.hashtag,
+            originalTweetId: post.id,
+            replyId: result.id,
+            replyText: replyText
+          });
+          
+          logger.info(`✅ Resposta ao trend postada: ${result.id}`);
+          
+          // Aguardar entre respostas
+          await this.sleep(30000);
+          
+        } catch (error) {
+          logger.error(`❌ Erro ao responder trend:`, error.message);
+          results.push({
+            success: false,
+            trend: topTrend.hashtag,
+            error: error.message
+          });
+        }
+      }
+      
+      return results;
+      
+    } catch (error) {
+      logger.error('❌ Erro ao procurar trends:', error.message);
+      throw error;
+    }
+  }
+
+  async interactWithInfluencers() {
+    try {
+      logger.info('=== INTERAGINDO COM INFLUENCERS DE CRYPTO ===');
+      
+      const influencers = this.engagementService.cryptoInfluencers.slice(0, 3);
+      const results = [];
+      
+      for (const influencer of influencers) {
+        try {
+          logger.info(`Procurando posts do influencer: ${influencer}`);
+          
+          const posts = await this.engagementService.searchCryptoPosts(`from:${influencer}`, 3);
+          
+          if (posts.length > 0) {
+            // Escolher o post mais engajado
+            const topPost = posts.sort((a, b) => 
+              (b.public_metrics?.like_count || 0) - (a.public_metrics?.like_count || 0)
+            )[0];
+            
+            // Curtir o post
+            await this.engagementService.likeTweet(topPost.id);
+            
+            // Gerar e postar resposta
+            const replyText = await this.engagementService.generateReply(topPost);
+            const replyResult = await this.engagementService.replyToTweet(topPost.id, replyText);
+            
+            results.push({
+              success: true,
+              influencer: influencer,
+              action: 'liked_and_replied',
+              originalTweetId: topPost.id,
+              replyId: replyResult.id,
+              replyText: replyText
+            });
+            
+            logger.info(`✅ Interação com ${influencer} concluída`);
+            
+            // Aguardar entre interações
+            await this.sleep(45000);
+          }
+          
+        } catch (error) {
+          logger.error(`❌ Erro ao interagir com ${influencer}:`, error.message);
+          results.push({
+            success: false,
+            influencer: influencer,
+            error: error.message
+          });
+        }
+      }
+      
+      const successCount = results.filter(r => r.success).length;
+      logger.info(`✅ Interação com influencers concluída: ${successCount}/${influencers.length}`);
+      
+      return results;
+      
+    } catch (error) {
+      logger.error('❌ Erro na interação com influencers:', error.message);
+      throw error;
+    }
+  }
+
+  async testEngagement() {
+    try {
+      logger.info('=== TESTE DE ENGAJAMENTO SIMPLIFICADO ===');
+      
+      // Testar apenas com hashtags simples (sem buscar posts específicos)
+      const testHashtags = ['#Bitcoin', '#Crypto'];
+      const results = [];
+      
+      for (const hashtag of testHashtags) {
+        try {
+          logger.info(`Testando busca por: ${hashtag}`);
+          
+          // Fazer uma busca simples
+          const posts = await this.engagementService.searchCryptoPosts(hashtag, 3);
+          
+          if (posts && posts.length > 0) {
+            logger.info(`✅ Encontrados ${posts.length} posts para ${hashtag}`);
+            
+            // Pegar o primeiro post e gerar uma resposta
+            const post = posts[0];
+            logger.info(`Post encontrado: ${post.text.substring(0, 100)}...`);
+            
+            // Gerar resposta (sem postar)
+            const replyText = await this.engagementService.generateReply(post);
+            logger.info(`Resposta gerada: ${replyText}`);
+            
+            results.push({
+              hashtag,
+              postsFound: posts.length,
+              replyGenerated: true,
+              replyText: replyText
+            });
+            
+          } else {
+            logger.info(`❌ Nenhum post encontrado para ${hashtag}`);
+            results.push({
+              hashtag,
+              postsFound: 0,
+              replyGenerated: false
+            });
+          }
+          
+          // Aguardar entre buscas
+          await this.sleep(10000);
+          
+        } catch (error) {
+          logger.error(`❌ Erro ao testar ${hashtag}:`, error.message);
+          results.push({
+            hashtag,
+            error: error.message
+          });
+        }
+      }
+      
+      logger.info('=== RESULTADO DO TESTE ===');
+      results.forEach((result, index) => {
+        logger.info(`Teste ${index + 1}: ${result.hashtag}`);
+        if (result.postsFound) {
+          logger.info(`  ✅ Posts encontrados: ${result.postsFound}`);
+          if (result.replyGenerated) {
+            logger.info(`  ✅ Resposta gerada: ${result.replyText}`);
+          }
+        } else if (result.error) {
+          logger.info(`  ❌ Erro: ${result.error}`);
+        } else {
+          logger.info(`  ⚠️ Nenhum post encontrado`);
+        }
+      });
+      
+      return results;
+      
+    } catch (error) {
+      logger.error('❌ Erro no teste de engajamento:', error.message);
+      throw error;
+    }
+  }
+
+  async replyToSpecificTweet(tweetId, replyText) {
+    try {
+      logger.info(`=== RESPONDENDO A TWEET ESPECÍFICO ===`);
+      logger.info(`Tweet ID: ${tweetId}`);
+      logger.info(`Resposta: ${replyText}`);
+      
+      // Usar o serviço de engajamento para responder
+      const result = await this.engagementService.replyToTweet(tweetId, replyText);
+      
+      if (result && result.id) {
+        logger.info(`✅ Resposta postada com sucesso!`);
+        logger.info(`ID da resposta: ${result.id}`);
+        logger.info(`🔗 Link: https://twitter.com/Crypto_realtime/status/${result.id}`);
+        return result;
+      } else {
+        throw new Error('Resposta não foi postada');
+      }
+      
+    } catch (error) {
+      logger.error('❌ Erro ao responder tweet:', error.message);
+      throw error;
+    }
+  }
+
   sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -466,8 +719,8 @@ Ralph Coins na vanguarda!
     try {
       logger.info('=== INICIANDO AGENDADOR RALPH COINS ===');
       
-      // Agendar 9 posts por dia distribuídos
-      const schedules = [
+      // Agendar 9 posts originais por dia
+      const postSchedules = [
         '0 8 * * *',   // 8:00 AM
         '0 10 * * *',  // 10:00 AM
         '0 12 * * *',  // 12:00 PM
@@ -479,29 +732,74 @@ Ralph Coins na vanguarda!
         '0 23 * * *'   // 11:00 PM
       ];
       
-      logger.info(`Agendando ${schedules.length} posts por dia`);
+      // Agendar 5 sessões de engajamento por dia
+      const engagementSchedules = [
+        '30 9 * * *',  // 9:30 AM - Engajamento com comunidade
+        '30 11 * * *', // 11:30 AM - Procurar trends
+        '30 15 * * *', // 3:30 PM - Interagir com influencers
+        '30 17 * * *', // 5:30 PM - Engajamento com comunidade
+        '30 21 * * *'  // 9:30 PM - Procurar trends
+      ];
+      
+      logger.info(`Agendando ${postSchedules.length} posts originais por dia`);
+      logger.info(`Agendando ${engagementSchedules.length} sessões de engajamento por dia`);
       
       // Usar node-cron para agendar
       const cron = require('node-cron');
       
-      schedules.forEach((schedule, index) => {
+      // Agendar posts originais
+      postSchedules.forEach((schedule, index) => {
         cron.schedule(schedule, async () => {
           try {
-            logger.info(`⏰ Executando post agendado ${index + 1}/9...`);
+            logger.info(`⏰ Executando post original ${index + 1}/9...`);
             await this.postNow();
           } catch (error) {
-            logger.error(`❌ Erro no post agendado ${index + 1}:`, error.message);
+            logger.error(`❌ Erro no post original ${index + 1}:`, error.message);
           }
         }, {
           scheduled: true,
           timezone: "America/Sao_Paulo"
         });
         
-        logger.info(`✅ Post ${index + 1} agendado: ${schedule} (Brasil)`);
+        logger.info(`✅ Post original ${index + 1} agendado: ${schedule} (Brasil)`);
+      });
+      
+      // Agendar sessões de engajamento
+      engagementSchedules.forEach((schedule, index) => {
+        cron.schedule(schedule, async () => {
+          try {
+            logger.info(`⏰ Executando sessão de engajamento ${index + 1}/5...`);
+            
+            // Alternar entre diferentes tipos de engajamento
+            switch (index % 3) {
+              case 0:
+                logger.info('Tipo: Engajamento com comunidade crypto');
+                await this.engageWithCryptoCommunity();
+                break;
+              case 1:
+                logger.info('Tipo: Procurar e responder trends');
+                await this.findAndReplyToTrends();
+                break;
+              case 2:
+                logger.info('Tipo: Interagir com influencers');
+                await this.interactWithInfluencers();
+                break;
+            }
+            
+          } catch (error) {
+            logger.error(`❌ Erro na sessão de engajamento ${index + 1}:`, error.message);
+          }
+        }, {
+          scheduled: true,
+          timezone: "America/Sao_Paulo"
+        });
+        
+        logger.info(`✅ Sessão de engajamento ${index + 1} agendada: ${schedule} (Brasil)`);
       });
       
       logger.info('✅ Agendador Ralph Coins iniciado com sucesso!');
-      logger.info('📅 Posts agendados: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h (Brasil)');
+      logger.info('📅 Posts originais: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h (Brasil)');
+      logger.info('🤝 Engajamento: 9:30h, 11:30h, 15:30h, 17:30h, 21:30h (Brasil)');
       logger.info('🕐 Hora atual do servidor:', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }));
       logger.info('🌍 Timezone configurado: America/Sao_Paulo');
       
@@ -523,7 +821,9 @@ async function main() {
         await bot.initialize();
         await bot.startScheduler();
         logger.info('🚀 Ralph Coins Bot iniciado com agendamento automático!');
-        logger.info('📅 9 posts por dia: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h');
+        logger.info('📅 9 posts originais por dia: 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h');
+        logger.info('🤝 5 sessões de engajamento por dia: 9:30h, 11:30h, 15:30h, 17:30h, 21:30h');
+        logger.info('💬 Respondendo posts, procurando trends e interagindo com influencers');
         logger.info('⏰ Bot rodando continuamente... Pressione Ctrl+C para parar');
         
         // Manter o processo rodando
@@ -554,6 +854,43 @@ async function main() {
         logger.info('✅ Ralph Coins Bot funcionando corretamente');
         break;
         
+      case 'engage':
+        await bot.initialize();
+        await bot.engageWithCryptoCommunity();
+        break;
+        
+      case 'trends':
+        await bot.initialize();
+        await bot.findAndReplyToTrends();
+        break;
+        
+      case 'influencers':
+        await bot.initialize();
+        await bot.interactWithInfluencers();
+        break;
+        
+      case 'engagement-stats':
+        await bot.initialize();
+        const stats = await bot.engagementService.getEngagementStats();
+        logger.info('📊 Estatísticas de engajamento:', stats);
+        break;
+        
+      case 'test-engagement':
+        await bot.initialize();
+        await bot.testEngagement();
+        break;
+        
+      case 'reply-to':
+        const tweetId = process.argv[3];
+        const replyText = process.argv[4];
+        if (!tweetId || !replyText) {
+          logger.error('❌ Uso: npm run ralph-coins-reply <tweet_id> <reply_text>');
+          process.exit(1);
+        }
+        await bot.initialize();
+        await bot.replyToSpecificTweet(tweetId, replyText);
+        break;
+        
       default:
         // Se não especificar comando, iniciar automaticamente (para Render)
         logger.info('🚀 Iniciando Ralph Coins Bot automaticamente...');
@@ -574,8 +911,16 @@ async function main() {
         app.get('/', (req, res) => {
           res.json({
             status: 'Ralph Coins Bot ativo',
-            message: 'Bot rodando e postando automaticamente',
-            nextPosts: '8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h',
+            message: 'Bot rodando com posts originais e engajamento automático',
+            originalPosts: '8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h, 23h',
+            engagementSessions: '9:30h, 11:30h, 15:30h, 17:30h, 21:30h',
+            features: [
+              'Posts originais baseados em notícias reais',
+              'Respostas automáticas a posts relevantes',
+              'Busca por trends de crypto',
+              'Interação com influencers',
+              'Engajamento com comunidade crypto'
+            ],
             timestamp: new Date().toISOString()
           });
         });
